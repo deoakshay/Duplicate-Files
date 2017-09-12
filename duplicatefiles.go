@@ -96,9 +96,14 @@ func (dbl DropBoxLevel) ListDirectories(path string) []string {
 	return directories
 }
 func (dbl DropBoxLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sync.WaitGroup) {
-	fmt.Println(path)
 	defer wg.Done()
-
+	dropBoxObject := dropbox.NewDropbox()
+	dropBoxObject.SetAccessToken(dbl.TokenId)
+	dropBoxMetaData, _ := dropBoxObject.Metadata(path, true, true, "", "", 1000)
+	for index, _ := range dropBoxMetaData.Contents {
+		absolutePath := dropBoxMetaData.Contents[index].Path
+		downloadedFile, size, _ := dropBoxObject.Download(absolutePath, "", 0)
+	}
 }
 
 func main() {
@@ -117,7 +122,6 @@ func main() {
 		path = "/"
 	}
 	listDirectories := duplicateFilesObject.ListDirectories(path)
-	fmt.Println(listDirectories)
 	for directories := range listDirectories {
 		wg.Add(1)
 		go duplicateFilesObject.HashAndWrite(listDirectories[directories], hashValueMap, &wg)
