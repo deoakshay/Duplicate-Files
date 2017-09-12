@@ -81,19 +81,19 @@ func main() {
 	hashValueMap := new(sync.Map)
 	var wg sync.WaitGroup
 	var dup DuplicateFiles = OSLevel{}
-	listDirs := dup.ListDirectories("/Users/akshaydeo/Dropbox")
+	listDirs := dup.ListDirectories("/Users/akshaydeo/Downloads")
 	for dir := range listDirs {
 		wg.Add(1)
 		go dup.HashAndWrite(listDirs[dir], hashValueMap, &wg)
 
 	}
 	wg.Wait()
-	s := make(map[interface{}]interface{})
+	s := make(map[string][]string)
 	fmt.Println("The Duplicate Files are:\n")
-	hashValueMap.Range(func(k, v interface{}) bool {
+	hashValueMap.Range(func(k string, v []string) bool {
 		s[k] = v
-		if len(v.([]string)) > 1 {
-			fmt.Println("Files:\n", v.([]string))
+		if len(v) > 1 {
+			fmt.Println("Files:\n", v)
 		}
 
 		return true
