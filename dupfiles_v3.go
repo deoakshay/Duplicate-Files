@@ -77,8 +77,8 @@ func listFiles(path string, wg *sync.WaitGroup) {
 		compareAndReturn(files)
 	}()
 
-	for _, d := range dirs {
-		listFiles(d, wg)
+	for _, dirs := range directoriess {
+		listFiles(dirs, wg)
 	}
 }
 func main() {
