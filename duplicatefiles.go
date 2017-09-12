@@ -111,18 +111,22 @@ func (dbl DropBoxLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sy
 			}
 
 			stringValueOfHash := hex.EncodeToString(hashValue.Sum(nil))
-			if value, ok := hashValueMap.Load(stringValueOfHash); !ok {
-				hashValueMap.Store(stringValueOfHash, []string{absolutePath})
-			} else {
-				fileArray, ok := value.([]string)
-				if ok {
-					fileArray = append(fileArray, absolutePath)
-					hashValueMap.Store(stringValueOfHash, fileArray)
-				}
-			}
-
+			WriteToSyncMap(stringValueOfHash, absolutePath, hashValueMap)
 		}
 	}
+}
+
+func WriteToSyncMap(key string, filePath string, hashValueMap *sync.Map) {
+
+	if value, ok := hashValueMap.Load(key); !ok {
+		hashValueMap.Store(key, []string{filePath})
+	} else if fileArray, ok := value.([]string); ok {
+
+		fileArray = append(fileArray, filePath)
+		hashValueMap.Store(key, fileArray)
+
+	}
+
 }
 
 func main() {
