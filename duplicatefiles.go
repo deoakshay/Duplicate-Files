@@ -48,14 +48,7 @@ func (op OSLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sync.Wai
 			}
 
 			stringValueOfHash := hex.EncodeToString(hashValue.Sum(nil))
-			if value, ok := hashValueMap.Load(stringValueOfHash); !ok {
-				hashValueMap.Store(stringValueOfHash, []string{absolutePath})
-			} else if fileArray, ok := value.([]string); ok {
-
-				fileArray = append(fileArray, absolutePath)
-				hashValueMap.Store(stringValueOfHash, fileArray)
-
-			}
+			WriteToSyncMap(stringValueOfHash, absolutePath, hashValueMap)
 		}
 	}
 
