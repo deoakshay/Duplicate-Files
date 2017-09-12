@@ -59,15 +59,14 @@ func listFiles(path string, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println(">> PATH:", path)
 	files := []string{}
-	dirs := []string{}
+	directories := []string{}
 
 	for _, f := range fileNames {
 		if !f.IsDir() {
 			files = append(files, filepath.Join(path, f.Name()))
 		} else {
-			dirs = append(dirs, filepath.Join(path, f.Name()))
+			directories = append(directories, filepath.Join(path, f.Name()))
 		}
 	}
 
