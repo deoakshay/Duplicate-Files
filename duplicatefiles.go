@@ -32,71 +32,128 @@ func (op OSLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sync.Wai
 	if err != nil {
 		log.Fatal("exiting in readdir", err)
 	}
-	for _, f := range fileNames {
-		if !f.IsDir() {
+	for _, files := range fileNames {
+		if !files.IsDir() {
 
-			absolutePath := filepath.Join(path, f.Name())
+			absolutePath := filepath.Join(path, files.Name())
 			file, err := os.Open(absolutePath)
 			if err != nil {
 				log.Fatal("exiting in opening", err)
 			}
-			p1 := md5.New()
+			hashValue := md5.New()
 
-			if _, err := io.Copy(p1, file); err != nil {
+			if _, err := io.Copy(hashValue, file); err != nil {
 
 				log.Fatal("exiting in copy", err)
 			}
 
-			q := hex.EncodeToString(p1.Sum(nil))
-			if val, ok := hashValueMap.Load(q); !ok {
-				hashValueMap.Store(q, []string{absolutePath})
-			} else {
-				ip, ok := val.([]string)
-				if ok {
-					ip = append(ip, absolutePath)
-					hashValueMap.Store(q, ip)
-				}
+			stringValueOfHash := hex.EncodeToString(hashValue.Sum(nil))
+			if value, ok := hashValueMap.Load(stringValueOfHash); !ok {
+				hashValueMap.Store(stringValueOfHash, []string{absolutePath})
+			} else if fileArray, ok := value.([]string); ok {
+
+				fileArray = append(fileArray, absolutePath)
+				hashValueMap.Store(stringValueOfHash, fileArray)
+
 			}
 		}
 	}
 
 }
+
 func (op OSLevel) ListDirectories(path string) []string {
+	fmt.Println("In Local Computer:")
 	fileNames, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	dirs := []string{}
-	dirs = append(dirs, path)
-	for _, f := range fileNames {
+	directories := []string{}
+	directories = append(directories, path)
+	for _, files := range fileNames {
 
-		if !f.IsDir() {
+		if !files.IsDir() {
 			continue
 		} else {
-			dirs = append(dirs, filepath.Join(path, f.Name()))
+			directories = append(directories, filepath.Join(path, files.Name()))
 		}
 	}
-	return dirs
+	return directories
 }
+
+func (dbl DropBoxLevel) ListDirectories(path string) []string {
+	dropBoxObject := dropbox.NewDropbox()
+	fmt.Println("In DropBox:")
+	dropBoxObject.SetAccessToken(dbl.TokenId)
+	dropBoxMetaData, _ := dropBoxObject.Metadata(path, true, true, "", "", 1000)
+	directories := []string{}
+	for index, _ := range dropBoxMetaData.Contents {
+		if dropBoxMetaData.Contents[index].IsDir == true {
+			directories = append(directories, dropBoxMetaData.Contents[index].Path)
+		}
+
+	}
+	directories = append(directories, path)
+	return directories
+}
+func (dbl DropBoxLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sync.WaitGroup) {
+	defer wg.Done()
+	dropBoxObject := dropbox.NewDropbox()
+	dropBoxObject.SetAccessToken(dbl.TokenId)
+	dropBoxMetaData, _ := dropBoxObject.Metadata(path, true, true, "", "", 1000)
+	for index, _ := range dropBoxMetaData.Contents {
+		absolutePath := dropBoxMetaData.Contents[index].Path
+		downloadedFile, size, _ := dropBoxObject.Download(absolutePath, "", 0)
+		if size > 0 {
+			hashValue := md5.New()
+			if _, err := io.Copy(hashValue, downloadedFile); err != nil {
+
+				log.Fatal("exiting in copy", err)
+			}
+
+			stringValueOfHash := hex.EncodeToString(hashValue.Sum(nil))
+			if value, ok := hashValueMap.Load(stringValueOfHash); !ok {
+				hashValueMap.Store(stringValueOfHash, []string{absolutePath})
+			} else {
+				fileArray, ok := value.([]string)
+				if ok {
+					fileArray = append(fileArray, absolutePath)
+					hashValueMap.Store(stringValueOfHash, fileArray)
+				}
+			}
+
+		}
+
+	}
+}
+
 func main() {
+	var choice int
+	fmt.Println("Do you want to run the program on:\n1.Local Files \n2.Dropbox Files:")
+	fmt.Scan(&choice)
+	var duplicateFilesObject DuplicateFiles
 	hashValueMap := new(sync.Map)
 	var wg sync.WaitGroup
-	var dup DuplicateFiles = OSLevel{}
-	listDirs := dup.ListDirectories("/Users/akshaydeo/Downloads")
-	for dir := range listDirs {
+	var path string
+	if choice == 1 {
+		duplicateFilesObject = OSLevel{}
+		path = "/Users/akshaydeo/Downloads"
+	} else {
+		duplicateFilesObject = DropBoxLevel{"31rmr26bffk3ij8", "n0rlqt27iuf7scp", "KeymFkX_8yAAAAAAAAACSBcyXS5BbpSCBxa4wf7ejZAdhEyt201sno3he5lImvl4"}
+		path = "/"
+	}
+	listDirectories := duplicateFilesObject.ListDirectories(path)
+	for directories := range listDirectories {
 		wg.Add(1)
-		go dup.HashAndWrite(listDirs[dir], hashValueMap, &wg)
+		go duplicateFilesObject.HashAndWrite(listDirectories[directories], hashValueMap, &wg)
 
 	}
 	wg.Wait()
-	s := make(map[string][]string)
-	fmt.Println("The Duplicate Files are:\n")
-	hashValueMap.Range(func(k string, v []string) bool {
-		s[k] = v
-		if len(v) > 1 {
-			fmt.Println("Files:\n", v)
+	storeValues := make(map[string][]string)
+	hashValueMap.Range(func(key, value interface{}) bool {
+		storeValues[key.(string)] = value.([]string)
+		if len(value.([]string)) > 1 {
+			fmt.Println(value.([]string))
 		}
-
 		return true
 	})
 }
