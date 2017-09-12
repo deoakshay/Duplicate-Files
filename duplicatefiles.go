@@ -130,8 +130,6 @@ func main() {
 	fmt.Println("Do you want to run the program on:\n1.Local Files \n2.Dropbox Files:")
 	fmt.Scan(&choice)
 	var duplicateFilesObject DuplicateFiles
-	hashValueMap := new(sync.Map)
-	var wg sync.WaitGroup
 	var path string
 	if choice == 1 {
 		duplicateFilesObject = OSLevel{}
@@ -140,19 +138,32 @@ func main() {
 		duplicateFilesObject = DropBoxLevel{"31rmr26bffk3ij8", "n0rlqt27iuf7scp", "KeymFkX_8yAAAAAAAAACSBcyXS5BbpSCBxa4wf7ejZAdhEyt201sno3he5lImvl4"}
 		path = "/"
 	}
-	listDirectories := duplicateFilesObject.ListDirectories(path)
+	dupes := findDuplicates(duplicateFilesObject, path)
+	fmt.Println("The Duplicate Files are:")
+	for _, value := range dupes {
+
+		if len(value) > 1 {
+			fmt.Println("\n", value)
+		}
+	}
+
+}
+func findDuplicates(d DuplicateFiles, path string) map[string][]string {
+	hashValueMap := new(sync.Map)
+	var wg sync.WaitGroup
+	listDirectories := d.ListDirectories(path)
+	fmt.Println(listDirectories)
 	for directories := range listDirectories {
 		wg.Add(1)
-		go duplicateFilesObject.HashAndWrite(listDirectories[directories], hashValueMap, &wg)
+		go d.HashAndWrite(listDirectories[directories], hashValueMap, &wg)
 
 	}
 	wg.Wait()
 	storeValues := make(map[string][]string)
 	hashValueMap.Range(func(key, value interface{}) bool {
 		storeValues[key.(string)] = value.([]string)
-		if len(value.([]string)) > 1 {
-			fmt.Println(value.([]string))
-		}
 		return true
 	})
+
+	return storeValues
 }
