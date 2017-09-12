@@ -116,6 +116,7 @@ func main() {
 		path = "/"
 	}
 	listDirectories := duplicateFilesObject.ListDirectories(path)
+	fmt.Println(listDirectories)
 	for directories := range listDirectories {
 		wg.Add(1)
 		go duplicateFilesObject.HashAndWrite(listDirectories[directories], hashValueMap, &wg)
