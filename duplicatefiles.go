@@ -96,8 +96,9 @@ func (dbl DropBoxLevel) ListDirectories(path string) []string {
 	return directories
 }
 func (dbl DropBoxLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sync.WaitGroup) {
-	defer wg.Done()
 	fmt.Println(path)
+	defer wg.Done()
+
 }
 
 func main() {
