@@ -33,7 +33,5 @@ func main() {
 		dirs = append(dirs, new1.Contents[n].Path)
 
 	}
-	fmt.Println(dirs)
 	fmt.Println(new1.Path, new1.Root, new1.ParentSharedFolderID, new1.IsDir)
-	fmt.Println(new1.Contents)
 }
