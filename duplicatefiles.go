@@ -103,6 +103,25 @@ func (dbl DropBoxLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sy
 	for index, _ := range dropBoxMetaData.Contents {
 		absolutePath := dropBoxMetaData.Contents[index].Path
 		downloadedFile, size, _ := dropBoxObject.Download(absolutePath, "", 0)
+		if size > 0 {
+			hashValue := md5.New()
+			if _, err := io.Copy(hashValue, downloadedFile); err != nil {
+
+				log.Fatal("exiting in copy", err)
+			}
+
+			stringValueOfHash := hex.EncodeToString(hashValue.Sum(nil))
+			if value, ok := hashValueMap.Load(stringValueOfHash); !ok {
+				hashValueMap.Store(stringValueOfHash, []string{absolutePath})
+			} else {
+				fileArray, ok := value.([]string)
+				if ok {
+					fileArray = append(fileArray, absolutePath)
+					hashValueMap.Store(stringValueOfHash, fileArray)
+				}
+			}
+
+		}
 	}
 }
 
