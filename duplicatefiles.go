@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/stacktic/dropbox"
 )
 
 type DuplicateFiles interface {
@@ -19,10 +21,9 @@ type DuplicateFiles interface {
 type OSLevel struct {
 }
 type DropBoxLevel struct {
-	Auth         string
-	Token        string
 	Clientid     string
 	Clientsecret string
+	TokenId      string
 }
 
 func (op OSLevel) HashAndWrite(path string, hashValueMap *sync.Map, wg *sync.WaitGroup) {
